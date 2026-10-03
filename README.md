@@ -20,7 +20,7 @@ Open `index.html` in a modern browser. Case studies use relative links and work 
 
 Each page includes a problem statement, architecture, repeatable demo steps, implementation outcomes, current limits, and direct links to source, setup documentation, and a source ZIP.
 
-These three were selected after comparing the READMEs and implementations of all nine linked projects: they show the clearest multi-stage computation or state transitions. Outcomes describe implemented behavior; no user-impact, model-quality, or real-market performance claims are implied. VectorTest's shared strategy algorithm and metric-accounting limits are documented explicitly.
+These three were selected after comparing the READMEs and implementations of all nine linked projects: they show the clearest multi-stage computation or state transitions. Outcomes describe implemented behavior; no user-impact, model-quality, or real-market performance claims are implied. VectorTest now uses distinct strategies and consistent fee-adjusted metrics; its remaining execution assumptions are documented explicitly.
 
 ## All projects
 
