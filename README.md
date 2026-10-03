@@ -2,9 +2,13 @@
 
 A responsive static portfolio connecting nine AI and educational market-simulation projects.
 
+## Live portfolio
+
+[Open the portfolio](https://rohit-developer-portfolio.vercel.app/) — hosted on Vercel, with automatic deployment from `main`.
+
 ## Run it
 
-Open `index.html` in a modern browser. Case studies use relative links and work locally or on a static host. No dependencies, API keys, or build step are required. To run a project demo, download its linked repository and open that repository's `index.html`.
+Open `index.html` in a modern browser. Case studies use relative links and work locally or on a static host. No dependencies, API keys, or build step are required. Open a featured case study and choose **Open live demo**, or open a local `demos/*.html` file. Other projects can be run by downloading their linked repositories.
 
 ## Featured case studies
 
@@ -34,6 +38,7 @@ These three were selected after comparing the READMEs and implementations of all
 
 - `index.html`: original responsive nine-card hub, AI / Markets / Systems filters, and focus section.
 - `case-studies/*.html`: standalone static case studies using the hub's existing colors, typography, and responsive styling.
+- `demos/*.html`: runnable copies of the three featured projects; Sift escapes imported text and filenames before HTML display.
 - Each selected card retains its direct repository link alongside the case-study link.
 - Update case-study evidence and review dates when a linked implementation changes. Keep future extensions separate from current capabilities.
 - All market projects use fictional or generated data and are educational prototypes.
