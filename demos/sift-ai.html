@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sift AI — RAG Document Intelligence</title>
+  <meta name="description" content="An evidence-first, browser-based RAG document retrieval prototype." />
+  <style>
+    :root { color-scheme: dark; --ink:#e8f0ff; --muted:#8fa2c3; --cyan:#63e8ff; --line:rgba(166,205,255,.15); --panel:rgba(10,24,45,.76); }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; color:var(--ink); font:15px/1.55 Inter, ui-sans-serif,system-ui,sans-serif; background:#061120; }
+    body:before { content:""; position:fixed; inset:0; pointer-events:none; background:radial-gradient(circle at 14% 20%,rgba(20,207,255,.14),transparent 27rem),radial-gradient(circle at 90% 0%,rgba(93,96,255,.14),transparent 28rem),linear-gradient(rgba(103,232,249,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(103,232,249,.035) 1px,transparent 1px); background-size:auto,auto,42px 42px,42px 42px; }
+    .shell { position:relative; width:min(1160px,calc(100% - 32px)); margin:auto; }
+    header { display:flex; align-items:center; justify-content:space-between; padding:24px 0; border-bottom:1px solid var(--line); }
+    .brand { display:flex; gap:12px; align-items:center; font-weight:750; letter-spacing:-.03em; font-size:19px; }
+    .mark { width:38px; height:38px; border-radius:12px; display:grid; place-items:center; color:#04101d; background:var(--cyan); box-shadow:0 0 32px rgba(99,232,255,.32); }
+    .tag { color:#a7bad6; font-size:12px; border:1px solid var(--line); padding:6px 10px; border-radius:99px; }
+    main { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(280px,.75fr); gap:30px; padding:66px 0 34px; }
+    .eyebrow { color:#a7f2ff; text-transform:uppercase; letter-spacing:.12em; font-size:11px; font-weight:700; }
+    h1 { margin:13px 0 17px; max-width:720px; font-size:clamp(42px,6vw,74px); line-height:.98; letter-spacing:-.065em; }
+    h1 em { color:var(--cyan); font-style:normal; }
+    .lead { max-width:670px; color:var(--muted); font-size:17px; }
+    .panel { margin-top:33px; padding:22px; border:1px solid var(--line); border-radius:22px; background:var(--panel); box-shadow:0 24px 70px rgba(0,0,0,.22); backdrop-filter:blur(14px); }
+    .heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+    .heading strong { display:flex; gap:9px; align-items:center; }
+    .query { display:flex; gap:8px; padding:7px; border:1px solid var(--line); border-radius:15px; background:#0a192d; }
+    input { width:100%; min-width:0; color:white; outline:0; border:0; padding:10px; background:transparent; font:inherit; }
+    button { font:inherit; cursor:pointer; border:0; }
+    .ask { color:#03101d; background:var(--cyan); font-weight:800; border-radius:10px; padding:10px 15px; }
+    .chips { display:flex; flex-wrap:wrap; gap:7px; margin-top:13px; }
+    .chip { color:#a8bedf; background:transparent; border:1px solid var(--line); border-radius:99px; padding:6px 10px; font-size:12px; }
+    .answer { margin-top:18px; border:1px solid rgba(99,232,255,.13); background:rgba(255,255,255,.025); padding:18px; border-radius:16px; }
+    .answer p { margin:11px 0 0; color:#c9d7eb; }
+    .status { color:#70edb6; font-size:12px; font-weight:700; }
+    .note { margin-top:14px; color:#7083a2; font-size:12px; }
+    aside { display:grid; align-content:start; gap:16px; }
+    .drop { min-height:224px; padding:24px; border-radius:22px; border:1px dashed rgba(99,232,255,.38); background:rgba(10,24,45,.6); transition:.2s; }
+    .drop.over { background:rgba(99,232,255,.1); border-color:var(--cyan); }
+    .icon { color:var(--cyan); font-size:25px; }
+    h2 { margin:13px 0 6px; font-size:17px; letter-spacing:-.02em; }
+    .muted { color:var(--muted); font-size:13px; }
+    .choose { width:100%; margin-top:18px; padding:11px; border-radius:11px; color:#c5f8ff; background:rgba(99,232,255,.1); border:1px solid rgba(99,232,255,.25); font-weight:700; }
+    .kb { border:1px solid var(--line); background:rgba(10,24,45,.55); padding:19px; border-radius:18px; }
+    .file { display:flex; gap:10px; align-items:flex-start; padding:10px 0; border-bottom:1px solid rgba(166,205,255,.08); }
+    .file:last-child { border:0; padding-bottom:0; }
+    .file b { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:225px; font-size:13px; }
+    .file span { color:#6f82a2; font-size:11px; }
+    section { border-top:1px solid var(--line); padding:28px 0 50px; }
+    .trace-title { display:flex; align-items:end; justify-content:space-between; margin-bottom:16px; }
+    .trace-title h2 { font-size:25px; margin:2px 0; }
+    .results { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    .result { min-height:185px; border:1px solid var(--line); border-radius:16px; background:rgba(10,24,45,.55); padding:17px; }
+    .result small { color:#9ff0ff; font-weight:700; }
+    .result p { color:#bccbe3; font-size:13px; }
+    .result footer { color:#6e82a1; font-size:11px; }
+    .empty { grid-column:1/-1; text-align:center; color:#7588a6; border:1px dashed var(--line); padding:34px; border-radius:16px; }
+    .footer { display:flex; justify-content:space-between; border-top:1px solid var(--line); padding:20px 0 28px; color:#5d7090; font-size:12px; }
+    @media (max-width:820px) { main{grid-template-columns:1fr;padding-top:46px}.results{grid-template-columns:1fr}.tag{display:none} }
+  </style>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%228%22%20fill%3D%22%2387aaff%22%2F%3E%3Ctext%20x%3D%2216%22%20y%3D%2221%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20font-weight%3D%22bold%22%20fill%3D%22%230b1020%22%3ECR%3C%2Ftext%3E%3C%2Fsvg%3E"></head>
+<body>
+  <div class="shell">
+    <header><div class="brand"><div class="mark">⌘</div><div>Sift AI <div style="font-size:11px;color:#7890b1;font-weight:500">RAG document intelligence</div></div></div><div class="tag">● Local retrieval active</div></header>
+    <main>
+      <div>
+        <div class="eyebrow">Evidence-first answers</div>
+        <h1>Turn documents into <em>answers you can verify.</em></h1>
+        <p class="lead">A browser-based RAG retrieval prototype. Upload text documents, ask a question, and inspect the ranked passages behind every answer.</p>
+        <div class="panel">
+          <div class="heading"><strong>✦ Ask your knowledge base</strong><span id="status" class="status">91% evidence match</span></div>
+          <div class="query"><input id="query" value="How do we reduce response latency?" aria-label="Question" /><button class="ask" id="ask">Ask ↗</button></div>
+          <div class="chips" id="chips"></div>
+          <div class="answer"><strong>✦ Retrieved answer</strong><p id="answer"></p><div class="note">This demo composes an extractive response from local, ranked passages. No documents are uploaded to a server.</div></div>
+        </div>
+      </div>
+      <aside>
+        <div class="drop" id="drop"><div class="icon">⇧</div><h2>Bring your own context</h2><p class="muted">Drop .txt, .md, .csv or .json documents here. Content stays in this browser.</p><input id="files" type="file" accept=".txt,.md,.csv,.json,text/plain,application/json" multiple hidden /><button class="choose" id="choose">Choose documents</button></div>
+        <div class="kb"><div class="heading"><strong>Knowledge base</strong><span class="muted" id="source-count"></span></div><div id="files-list"></div></div>
+      </aside>
+    </main>
+    <section><div class="trace-title"><div><div class="eyebrow">Retrieval trace</div><h2>Evidence behind the answer</h2></div><div class="muted" id="chunk-count"></div></div><div class="results" id="results"></div></section>
+    <div class="footer"><span>Built as a portfolio-ready RAG retrieval prototype.</span><span>Private by default · Browser only</span></div>
+  </div>
+  <script>
+    const escapeHtml = value => String(value).replace(/[&<>"']/g, character => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[character]));
+    let chunks = [
+      {source:'Product launch playbook.md',category:'Go-to-market',text:'Launch readiness requires a clear owner for every customer touchpoint. The team should validate messaging, support coverage, billing, and rollback plans before opening access.'},
+      {source:'Engineering handbook.md',category:'Reliability',text:'Response latency is reduced by caching frequent reads, moving long-running work to background jobs, and measuring p95 latency on every critical endpoint.'},
+      {source:'Customer research notes.txt',category:'Research',text:'Interviewed teams asked for source citations in every generated answer. They need to verify where a recommendation came from before acting on it.'},
+      {source:'Retrieval design brief.md',category:'Architecture',text:'A retrieval pipeline splits documents into semantically useful chunks, ranks relevant evidence for a question, and passes the strongest context to a language model.'},
+      {source:'Security baseline.md',category:'Security',text:'Customer documents should be isolated by tenant, encrypted at rest, and deleted according to the retention policy. Access logs must be available for audits.'}
+    ];
+    const prompts=['How do we reduce response latency?','Why do answers need source citations?','What does a RAG pipeline do?'];
+    const words=value=>(value.toLowerCase().match(/[a-z0-9]{3,}/g)||[]).filter((x,i,a)=>a.indexOf(x)===i);
+    const retrieve=query=>{const q=words(query);return chunks.map(c=>{const w=words(c.text),match=q.filter(x=>w.includes(x));return {...c,score:match.length/Math.max(1,q.length),match}}).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,3)};
+    function render(){
+      const query=document.querySelector('#query').value.trim(), found=retrieve(query), sources=[...new Set(chunks.map(x=>x.source))];
+      document.querySelector('#answer').textContent=found.length ? found.slice(0,2).map(x=>x.text).join(' ')+' This answer is assembled from the ranked local sources below.' : 'No relevant evidence was found yet. Try another question or add a document.';
+      document.querySelector('#status').textContent=found.length?Math.min(96,Math.round(58+found[0].score*26))+'% evidence match':'No match';
+      document.querySelector('#source-count').textContent=sources.length+' sources';
+      document.querySelector('#chunk-count').textContent=chunks.length+' indexed passages';
+      document.querySelector('#files-list').innerHTML=sources.slice(0,5).map(s=>'<div class="file"><span>▧</span><div><b>'+escapeHtml(s)+'</b><span>'+chunks.filter(c=>c.source===s).length+' indexed passages</span></div></div>').join('');
+      document.querySelector('#results').innerHTML=found.length?found.map((x,i)=>'<article class="result"><small>0'+(i+1)+' · '+Math.round(x.score*100)+'% match</small><p>“'+escapeHtml(x.text)+'”</p><footer>▧ '+escapeHtml(x.source)+' · '+escapeHtml(x.category)+'</footer></article>').join(''):'<div class="empty">No matching passages yet. Try a broader question or load a document.</div>';
+    }
+    document.querySelector('#chips').innerHTML=prompts.map(x=>'<button class="chip">'+x+'</button>').join('');
+    document.querySelectorAll('.chip').forEach((b,i)=>b.onclick=()=>{document.querySelector('#query').value=prompts[i];render()});
+    document.querySelector('#ask').onclick=render; document.querySelector('#query').onkeydown=e=>e.key==='Enter'&&render();
+    const input=document.querySelector('#files'),drop=document.querySelector('#drop');
+    document.querySelector('#choose').onclick=()=>input.click(); input.onchange=e=>add(e.target.files);
+    ['dragenter','dragover'].forEach(e=>drop.addEventListener(e,x=>{x.preventDefault();drop.classList.add('over')})); ['dragleave','drop'].forEach(e=>drop.addEventListener(e,x=>{x.preventDefault();drop.classList.remove('over')})); drop.ondrop=e=>add(e.dataTransfer.files);
+    async function add(files){for(const file of [...files].filter(x=>x.size<1500000)){const text=await file.text();(text.match(/.{1,420}(?:\s|$)/g)||[]).slice(0,8).forEach(part=>chunks.push({source:file.name,category:'Uploaded',text:part.trim()}))}render()}
+    render();
+  </script>
+</body>
+</html>
