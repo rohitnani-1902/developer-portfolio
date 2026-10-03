@@ -59,6 +59,7 @@
   </style>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%228%22%20fill%3D%22%2387aaff%22%2F%3E%3Ctext%20x%3D%2216%22%20y%3D%2221%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20font-weight%3D%22bold%22%20fill%3D%22%230b1020%22%3ECR%3C%2Ftext%3E%3C%2Fsvg%3E"></head>
 <body><p style="max-width:1180px;margin:18px auto;padding:0 22px"><a href="../case-studies/sift-ai.html" style="color:#c7d7f8;font-size:13px">← Project case study</a></p>
+  
   <div class="shell">
     <header><div class="brand"><div class="mark">⌘</div><div>Sift AI <div style="font-size:11px;color:#7890b1;font-weight:500">RAG document intelligence</div></div></div><div class="tag">● Local retrieval active</div></header>
     <main>
@@ -67,14 +68,14 @@
         <h1>Turn documents into <em>answers you can verify.</em></h1>
         <p class="lead">A browser-based RAG retrieval prototype. Upload text documents, ask a question, and inspect the ranked passages behind every answer.</p>
         <div class="panel">
-          <div class="heading"><strong>✦ Ask your knowledge base</strong><span id="status" class="status">91% evidence match</span></div>
-          <div class="query"><input id="query" value="How do we reduce response latency?" aria-label="Question" /><button class="ask" id="ask">Ask ↗</button></div>
+          <div class="heading"><strong>✦ Ask your knowledge base</strong><span id="status" class="status">Query-term coverage</span></div>
+          <div class="query"><input id="query" value="How do we reduce response latency?" aria-label="Question" maxlength="2000" /><button class="ask" id="ask">Ask ↗</button></div>
           <div class="chips" id="chips"></div>
-          <div class="answer"><strong>✦ Retrieved answer</strong><p id="answer"></p><div class="note">This demo composes an extractive response from local, ranked passages. No documents are uploaded to a server.</div></div>
+          <div class="answer"><strong>✦ Retrieved answer</strong><p id="answer"></p><div class="note">This demo composes an extractive response from local, ranked passages. No documents are uploaded to a server. Coverage measures matched query terms, not confidence. BM25 ranks lexical relevance.</div></div>
         </div>
       </div>
       <aside>
-        <div class="drop" id="drop"><div class="icon">⇧</div><h2>Bring your own context</h2><p class="muted">Drop .txt, .md, .csv or .json documents here. Content stays in this browser.</p><input id="files" type="file" accept=".txt,.md,.csv,.json,text/plain,application/json" multiple hidden /><button class="choose" id="choose">Choose documents</button></div>
+        <div class="drop" id="drop"><div class="icon">⇧</div><h2>Bring your own context</h2><p class="muted">Drop .txt, .md, .csv or .json documents here. Content stays in this browser.</p><input id="files" type="file" accept=".txt,.md,.csv,.json,text/plain,application/json" multiple hidden /><button class="choose" id="choose">Choose documents</button><button class="chip" id="reset" style="margin-top:12px">Reset documents</button><p class="muted" id="feedback" role="status" aria-live="polite">Up to 1.5 MB per file, 80 passages per file, 200 per session. Excess content is reported.</p></div>
         <div class="kb"><div class="heading"><strong>Knowledge base</strong><span class="muted" id="source-count"></span></div><div id="files-list"></div></div>
       </aside>
     </main>
@@ -82,34 +83,87 @@
     <div class="footer"><span>Built as a portfolio-ready RAG retrieval prototype.</span><span>Private by default · Browser only</span></div>
   </div>
   <script>
-    const escapeHtml = value => String(value).replace(/[&<>"']/g, character => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[character]));
-    let chunks = [
+    const seed = [
       {source:'Product launch playbook.md',category:'Go-to-market',text:'Launch readiness requires a clear owner for every customer touchpoint. The team should validate messaging, support coverage, billing, and rollback plans before opening access.'},
       {source:'Engineering handbook.md',category:'Reliability',text:'Response latency is reduced by caching frequent reads, moving long-running work to background jobs, and measuring p95 latency on every critical endpoint.'},
       {source:'Customer research notes.txt',category:'Research',text:'Interviewed teams asked for source citations in every generated answer. They need to verify where a recommendation came from before acting on it.'},
       {source:'Retrieval design brief.md',category:'Architecture',text:'A retrieval pipeline splits documents into semantically useful chunks, ranks relevant evidence for a question, and passes the strongest context to a language model.'},
       {source:'Security baseline.md',category:'Security',text:'Customer documents should be isolated by tenant, encrypted at rest, and deleted according to the retention policy. Access logs must be available for audits.'}
     ];
-    const prompts=['How do we reduce response latency?','Why do answers need source citations?','What does a RAG pipeline do?'];
-    const words=value=>(value.toLowerCase().match(/[a-z0-9]{3,}/g)||[]).filter((x,i,a)=>a.indexOf(x)===i);
-    const retrieve=query=>{const q=words(query);return chunks.map(c=>{const w=words(c.text),match=q.filter(x=>w.includes(x));return {...c,score:match.length/Math.max(1,q.length),match}}).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,3)};
-    function render(){
-      const query=document.querySelector('#query').value.trim(), found=retrieve(query), sources=[...new Set(chunks.map(x=>x.source))];
-      document.querySelector('#answer').textContent=found.length ? found.slice(0,2).map(x=>x.text).join(' ')+' This answer is assembled from the ranked local sources below.' : 'No relevant evidence was found yet. Try another question or add a document.';
-      document.querySelector('#status').textContent=found.length?Math.min(96,Math.round(58+found[0].score*26))+'% evidence match':'No match';
-      document.querySelector('#source-count').textContent=sources.length+' sources';
-      document.querySelector('#chunk-count').textContent=chunks.length+' indexed passages';
-      document.querySelector('#files-list').innerHTML=sources.slice(0,5).map(s=>'<div class="file"><span>▧</span><div><b>'+escapeHtml(s)+'</b><span>'+chunks.filter(c=>c.source===s).length+' indexed passages</span></div></div>').join('');
-      document.querySelector('#results').innerHTML=found.length?found.map((x,i)=>'<article class="result"><small>0'+(i+1)+' · '+Math.round(x.score*100)+'% match</small><p>“'+escapeHtml(x.text)+'”</p><footer>▧ '+escapeHtml(x.source)+' · '+escapeHtml(x.category)+'</footer></article>').join(''):'<div class="empty">No matching passages yet. Try a broader question or load a document.</div>';
-    }
-    document.querySelector('#chips').innerHTML=prompts.map(x=>'<button class="chip">'+x+'</button>').join('');
-    document.querySelectorAll('.chip').forEach((b,i)=>b.onclick=()=>{document.querySelector('#query').value=prompts[i];render()});
-    document.querySelector('#ask').onclick=render; document.querySelector('#query').onkeydown=e=>e.key==='Enter'&&render();
-    const input=document.querySelector('#files'),drop=document.querySelector('#drop');
-    document.querySelector('#choose').onclick=()=>input.click(); input.onchange=e=>add(e.target.files);
-    ['dragenter','dragover'].forEach(e=>drop.addEventListener(e,x=>{x.preventDefault();drop.classList.add('over')})); ['dragleave','drop'].forEach(e=>drop.addEventListener(e,x=>{x.preventDefault();drop.classList.remove('over')})); drop.ondrop=e=>add(e.dataTransfer.files);
-    async function add(files){for(const file of [...files].filter(x=>x.size<1500000)){const text=await file.text();(text.match(/.{1,420}(?:\s|$)/g)||[]).slice(0,8).forEach(part=>chunks.push({source:file.name,category:'Uploaded',text:part.trim()}))}render()}
-    render();
+const STOP=new Set('a an the and or to of in on for is are was were be by with do does how why what we they it this every should from before'.split(' '));
+const tokenize=value=>(String(value).normalize('NFKC').toLowerCase().match(/[\p{L}\p{N}]+/gu)||[]).filter(t=>t.length>1&&!STOP.has(t));
+function rank(query,passages){
+ const terms=[...new Set(tokenize(query))];if(!terms.length||!passages.length)return [];
+ const tokens=passages.map(p=>tokenize(p.text)),avg=tokens.reduce((n,t)=>n+t.length,0)/tokens.length||1;
+ return passages.map((p,i)=>{
+  const match=terms.filter(t=>tokens[i].includes(t));
+  const score=match.reduce((sum,t)=>{
+   const tf=tokens[i].filter(v=>v===t).length,df=tokens.filter(v=>v.includes(t)).length;
+   return sum+Math.log(1+(tokens.length-df+.5)/(df+.5))*tf*2.2/(tf+1.2*(.25+.75*tokens[i].length/avg));
+  },0);
+  return {...p,score,match,coverage:match.length/terms.length,index:i};
+ }).filter(p=>p.score>0).sort((a,b)=>b.score-a.score||a.index-b.index).slice(0,3);
+}
+function splitText(text,limit=80){
+ const words=text.trim().split(/\s+/u);if(!text.trim())return {parts:[],truncated:false};
+ const parts=[];let start=0;
+ while(start<words.length&&parts.length<limit){
+  let end=start,size=0;while(end<words.length&&(size<600||end===start)){size+=words[end].length+1;end++;}
+  parts.push(words.slice(start,end).join(' '));
+  if(end===words.length)return {parts,truncated:false};
+  start=Math.max(start+1,end-12);
+ }
+ return {parts,truncated:start<words.length};
+}
+function validateFile(file){
+ if(!/\.(txt|md|csv|json)$/i.test(file.name))return 'unsupported file type';
+ if(file.size>1500000)return 'exceeds 1.5 MB';
+ return '';
+}
+let chunks=seed.map((p,i)=>({...p,id:'sample-'+i})),sequence=0,importing=false;
+const prompts=['How do we reduce response latency?','Why do answers need source citations?','What does a retrieval pipeline do?'];
+const el=id=>document.getElementById(id);
+function node(tag,text,className){const n=document.createElement(tag);n.textContent=text;if(className)n.className=className;return n;}
+function render(){
+ const found=rank(el('query').value.slice(0,2000),chunks),sources=[...new Set(chunks.map(p=>p.id))];
+ el('answer').textContent=found.length?found.slice(0,2).map(p=>p.text).join(' ')+' These excerpts are the ranked local evidence.':'No relevant evidence was found. Try another question or add a document.';
+ el('status').textContent=found.length?Math.round(found[0].coverage*100)+'% query-term coverage':'No match';
+ el('source-count').textContent=sources.length+' sources';el('chunk-count').textContent=chunks.length+' indexed passages';
+ el('files-list').replaceChildren(...sources.map(id=>{
+  const p=chunks.find(c=>c.id===id),row=node('div','','file'),info=node('div','');
+  info.append(node('b',p.source),node('span',chunks.filter(c=>c.id===id).length+' indexed passages'));row.append(node('span','▧'),info);return row;
+ }));
+ el('results').replaceChildren(...(found.length?found.map((p,i)=>{
+  const card=node('article','','result');card.append(node('small',String(i+1).padStart(2,'0')+' · BM25 '+p.score.toFixed(2)),node('p',p.text),node('footer',p.source+' · '+p.category+' · Matched: '+p.match.join(', ')));return card;
+ }):[node('div','No matching passages. Try a broader question or load a document.','empty')]));
+}
+for(const prompt of prompts){const b=node('button',prompt,'chip');b.onclick=()=>{el('query').value=prompt;render()};el('chips').append(b);}
+el('ask').onclick=render;el('query').onkeydown=e=>{if(e.key==='Enter')render()};
+el('choose').onclick=()=>el('files').click();el('files').onchange=e=>add(e.target.files);
+const drop=el('drop');
+['dragenter','dragover'].forEach(event=>drop.addEventListener(event,e=>{e.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(event=>drop.addEventListener(event,e=>{e.preventDefault();drop.classList.remove('over')}));
+drop.ondrop=e=>add(e.dataTransfer.files);
+el('reset').onclick=()=>{if(importing)return;chunks=seed.map((p,i)=>({...p,id:'sample-'+i}));el('feedback').textContent='Sample knowledge base restored.';render()};
+async function add(files){
+ if(importing)return;importing=true;el('choose').disabled=true;el('reset').disabled=true;const messages=[];
+ try{
+  for(const file of Array.from(files).slice(0,10)){
+   const error=validateFile(file);if(error){messages.push(file.name+': '+error+'.');continue;}
+   if(chunks.length>=200){messages.push(file.name+': session limit of 200 passages reached.');continue;}
+   try{
+    const text=await file.text();
+    if(!text.trim()||/[\u0000-\u0008\u000e-\u001f]/u.test(text)){messages.push(file.name+': empty or non-text content.');continue;}
+    const result=splitText(text,Math.min(80,200-chunks.length)),id='upload-'+(++sequence);
+    chunks.push(...result.parts.map(text=>({source:file.name,id,category:'Uploaded',text})));
+    messages.push(file.name+': '+result.parts.length+' passages added'+(result.truncated?' (truncated at the passage limit).':'.'));
+   }catch{messages.push(file.name+': could not read this file.');}
+  }
+  if(files.length>10)messages.push('Only the first 10 files were processed. Add remaining files separately.');
+  el('feedback').textContent=messages.join(' ');render();
+ }finally{importing=false;el('choose').disabled=false;el('reset').disabled=false;el('files').value='';}
+}
+render();
   </script>
 </body>
 </html>
