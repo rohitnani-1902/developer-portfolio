@@ -7,4 +7,6 @@ const item={mode:'ops',question:'Prepare a response',created:'2026-10-04T00:00:0
 let text=context.markdown(item);
 for(const value of ['Needs review','Invoice needs verification. [S1]','request.txt (line 3)','Duplicate payment reported.','fixture'])assert.ok(text.includes(value),value);
 item.approved=true;item.reviewed='2026-10-04T01:00:00Z';text=context.markdown(item);assert.ok(text.includes('Reviewed locally at '+item.reviewed));
+item.mode='research';item.result.source_coverage=[{document_id:'2',source:'missing.md',status:'No lexical match',matched_terms:[],citations:[],excerpt:''}];
+text=context.markdown(item);assert.ok(text.includes('missing.md (source 2): No lexical match'));
 console.log('Export checks passed: task, engine, review status, citations, source excerpt and trace.');

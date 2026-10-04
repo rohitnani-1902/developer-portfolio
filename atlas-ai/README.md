@@ -57,7 +57,7 @@ python -m unittest discover -s tests -p "test_*.py" -v
 node --check public/app.js
 ```
 
-Fourteen backend checks cover retrieval/no-evidence handling, provenance, Unicode, chunk tails, input limits, syntax and code flags, intake classification, structured generation contracts, invalid citations, unconfigured providers, HTTP boundaries and the hosted-generation gate. Model contract tests use a clearly identified test double; they do not prove real model quality.
+Seventeen backend checks cover retrieval/no-evidence handling, provenance, Unicode, chunk tails, input limits, syntax and code flags, intake classification, structured generation contracts, invalid citations, unconfigured providers, HTTP boundaries and the hosted-generation gate. Model contract tests use a clearly identified test double; they do not prove real model quality.
 
 Browser checks verify the three example flows, save/reopen behavior and draft review. To explicitly run the small, billable, real-provider fixture check after adding provider credit:
 
@@ -78,3 +78,5 @@ This is an integrated portfolio MVP, not a production SaaS service. There is no 
 Next milestones: independently labeled retrieval evaluation, PDF ingestion, semantic retrieval, per-user authentication/storage, distributed usage budgets, and opt-in business connectors with explicit action approval.
 
 Provider references: [OpenAI structured outputs](https://developers.openai.com/api/docs/guides/structured-outputs) · [Vercel OpenAI-compatible API](https://vercel.com/docs/ai-gateway/sdks-and-apis/openai-chat-completions).
+
+Research source coverage lists every uploaded source, matched question terms, selected citations and a representative excerpt. It distinguishes no lexical match from exclusion by the six-passage limit. Duplicate filenames retain separate source IDs. This view does not automatically detect contradictions or prove coverage; inspect dates, numbers and assumptions in the original excerpts. Coverage also accompanies Markdown exports.
