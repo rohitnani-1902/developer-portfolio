@@ -25,6 +25,32 @@ class AtlasTests(unittest.TestCase):
         docs = documents([{'name': 'same', 'text': 'first evidence'}, {'name': 'same', 'text': 'second evidence'}])
         self.assertNotEqual(passages(docs)[0]['id'], passages(docs)[1]['id'])
 
+    def test_source_coverage_preserves_missing_and_duplicate_sources(self):
+        result = run({'mode': 'research', 'question': 'launch', 'documents': [
+            {'name': 'same.md', 'text': 'Launch on 15 November with 200 teams.'},
+            {'name': 'same.md', 'text': 'Launch on 22 November with 50 teams.'},
+            {'name': 'interviews.md', 'text': 'People requested exportable briefs.'}]})
+        rows = result['source_coverage']
+        self.assertEqual([r['document_id'] for r in rows], ['1', '2', '3'])
+        self.assertEqual([r['status'] for r in rows], ['Selected evidence', 'Selected evidence', 'No lexical match'])
+        self.assertIn('15 November', rows[0]['excerpt'])
+        self.assertIn('22 November', rows[1]['excerpt'])
+        self.assertNotEqual(rows[0]['citations'], rows[1]['citations'])
+        self.assertEqual(rows[2]['excerpt'], '')
+
+    def test_source_coverage_distinguishes_retrieval_limit_from_no_match(self):
+        docs = [{'name': str(i), 'text': 'Launch proposal.'} for i in range(7)]
+        result = run({'mode': 'research', 'question': 'launch', 'documents': docs})
+        self.assertEqual(len(result['evidence']), 6)
+        self.assertEqual(result['source_coverage'][-1]['status'], 'Outside retrieval limit')
+        self.assertEqual(result['source_coverage'][-1]['matched_terms'], ['launch'])
+
+    def test_source_coverage_with_no_evidence_abstains(self):
+        result = run({'mode': 'research', 'question': 'unmatchedzz', 'documents': self.docs})
+        self.assertEqual(result['claims'], [])
+        self.assertTrue(all(r['status'] == 'No lexical match' for r in result['source_coverage']))
+        self.assertEqual(run({'mode': 'ops', 'question': 'draft', 'documents': self.docs})['source_coverage'], [])
+
     def test_chunk_tail_and_limits(self):
         chunks = passages(documents([{'name': 'long', 'text': 'a' * 4000 + ' final-tail'}]))
         self.assertIn('final-tail', chunks[-1]['text'])

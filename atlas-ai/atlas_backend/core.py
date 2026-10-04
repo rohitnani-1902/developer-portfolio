@@ -97,6 +97,19 @@ def review_code(docs):
                 findings.append({'source': doc['name'], 'line': error.lineno or 1, 'severity': 'high', 'title': 'Python syntax error', 'detail': error.msg})
     return findings[:40]
 
+def source_coverage(docs, ranked, selected):
+    """Describe lexical retrieval coverage without claiming factual agreement."""
+    rows = []
+    for doc in docs:
+        matches = [p for p in ranked if p['document_id'] == doc['id']]
+        chosen = [p for p in selected if p['document_id'] == doc['id']]
+        rows.append({'document_id': doc['id'], 'source': doc['name'],
+                     'status': 'Selected evidence' if chosen else ('Outside retrieval limit' if matches else 'No lexical match'),
+                     'matched_terms': sorted({t for p in matches for t in p['matched']}),
+                     'citations': [p['id'] for p in chosen],
+                     'excerpt': chosen[0]['text'] if chosen else ''})
+    return rows
+
 def triage(text):
     lowered = text.casefold()
     categories = {'Billing': ['invoice', 'refund', 'payment', 'charged'], 'Access': ['login', 'password', 'access', 'locked'],
@@ -185,7 +198,8 @@ def run(payload, call=None):
         raise InputError('Add at least one source.')
     chunks = passages(docs)
     findings = review_code(docs) if mode == 'code' else []
-    evidence = retrieve(question, chunks)
+    ranked = retrieve(question, chunks, limit=300)
+    evidence = ranked[:6]
     # Code and ops need context even if the task is a broad instruction.
     if mode != 'research':
         # Include at least one passage per source before spending the context budget.
@@ -197,12 +211,13 @@ def run(payload, call=None):
         raise InputError('Invalid generation choice.')
     result = {'mode': mode, 'engine': 'local', 'summary': 'No relevant evidence found. Try a more specific question.',
               'claims': [], 'next_steps': [], 'draft': '', 'evidence': evidence, 'findings': findings,
-              'triage': triage(docs[0]['text']) if mode == 'ops' else None}
+              'triage': triage(docs[0]['text']) if mode == 'ops' else None,
+              'source_coverage': source_coverage(docs, ranked, evidence) if mode == 'research' else []}
     if ai and evidence:
         result.update(generate(mode, question, evidence, findings, call))
         result['engine'] = 'ai'
     elif mode == 'research' and evidence:
-        result['summary'] = 'Retrieved source excerpts. Run AI synthesis to create a brief or compare these sources.'
+        result['summary'] = 'Compare the selected excerpts by source below. Lexical matches do not establish agreement, completeness or factual support.'
         result['claims'] = [{'text': e['text'], 'citations': [e['id']]} for e in evidence[:4]]
     elif mode == 'code':
         result['summary'] = f'{len(findings)} static review flags. These are heuristic checks requiring review, not a complete audit.'
