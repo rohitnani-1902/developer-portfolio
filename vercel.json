@@ -1,17 +1,48 @@
 {
   "functions": {
-    "api/atlas.py": { "maxDuration": 60, "includeFiles": "atlas-ai/atlas_backend/**" }
+    "api/atlas.py": {
+      "maxDuration": 60,
+      "includeFiles": "atlas-ai/atlas_backend/**"
+    }
   },
   "rewrites": [
-    { "source": "/projects/atlas-ai", "destination": "/atlas-ai/public/index.html" },
-    { "source": "/projects/atlas-ai/", "destination": "/atlas-ai/public/index.html" },
-    { "source": "/projects/atlas-ai/:asset", "destination": "/atlas-ai/public/:asset" }
+    {
+      "source": "/projects/atlas-ai",
+      "destination": "/atlas-ai/public/index.html"
+    },
+    {
+      "source": "/projects/atlas-ai/",
+      "destination": "/atlas-ai/public/index.html"
+    },
+    {
+      "source": "/projects/atlas-ai/:asset",
+      "destination": "/atlas-ai/public/:asset"
+    }
   ],
   "headers": [
-    { "source": "/projects/atlas-ai/:path*", "headers": [
-      { "key": "X-Content-Type-Options", "value": "nosniff" },
-      { "key": "Referrer-Policy", "value": "no-referrer" },
-      { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" }
-    ] }
+    {
+      "source": "/projects/atlas-ai/:path*",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/projects/atlas-ai",
+      "destination": "/projects/atlas-ai/",
+      "permanent": false
+    }
   ]
 }
