@@ -48,3 +48,10 @@ These three were selected after comparing the READMEs and implementations of all
 Check all four filters, open every case study from its card, follow the return link, and verify relative links when serving from a subdirectory. Compare documented demo steps with the linked source. The case-study pages require no JavaScript.
 
 Vanilla HTML, CSS, and JavaScript. Part of [Rohit's GitHub profile](https://github.com/rohitnani-1902).
+
+
+## Atlas AI Studio
+
+Three new workspaces: [Research Desk](https://rohit-developer-portfolio.vercel.app/projects/atlas-ai/#research), [Code Lens](https://rohit-developer-portfolio.vercel.app/projects/atlas-ai/#code), and [Ops Flow](https://rohit-developer-portfolio.vercel.app/projects/atlas-ai/#ops). Public previews provide backend-powered local analysis, browser-saved results and Markdown exports. Model generation is integrated but requires provider credit and a privately configured backend; successful real-model generation is not yet verified.
+
+See [architecture, setup and limitations](atlas-ai/README.md). Fourteen backend checks and browser verification cover the three example workflows. Run tests with `python -m unittest discover -s atlas-ai/tests -p "test_*.py" -v`.

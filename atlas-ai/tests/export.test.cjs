@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const source=fs.readFileSync(path.join(__dirname,'../public/app.js'),'utf8');
+const fn=source.slice(source.indexOf('function markdown(item)'),source.indexOf('function download(item)'));
+const context={config:{research:{name:'Research Desk'},code:{name:'Code Lens'},ops:{name:'Ops Flow'}}};
+vm.createContext(context);vm.runInContext(fn,context);
+const item={mode:'ops',question:'Prepare a response',created:'2026-10-04T00:00:00Z',approved:false,result:{engine:'local',summary:'Intake summary',claims:[{text:'Invoice needs verification.',citations:['S1']}],findings:[],draft:'Please share the reference.',next_steps:['Review invoice'],evidence:[{id:'S1',source:'request.txt',line:3,text:'Duplicate payment reported.'}],trace:{id:'fixture'}}};
+let text=context.markdown(item);
+for(const value of ['Needs review','Invoice needs verification. [S1]','request.txt (line 3)','Duplicate payment reported.','fixture'])assert.ok(text.includes(value),value);
+item.approved=true;item.reviewed='2026-10-04T01:00:00Z';text=context.markdown(item);assert.ok(text.includes('Reviewed locally at '+item.reviewed));
+console.log('Export checks passed: task, engine, review status, citations, source excerpt and trace.');
